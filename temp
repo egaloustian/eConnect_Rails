@@ -1,0 +1,2 @@
+  PONum Description DocNum DocDate:Time PurchaseAmt:Float Delivery Carrier BSSI_facility CompanyReqOrg:Integer JournalAcctCode JournaAmt:Float DocType CompanyAlloc DivAlloc DeptAlloc RemittoID Vendor BatchID ShaKey Voucher BSSI_Intercompany BSSI_Max Account AggAccount AggSum:Float SourceFile
+

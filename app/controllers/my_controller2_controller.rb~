@@ -1,0 +1,102 @@
+require 'rubygems'
+require 'nokogiri'
+require 'open-uri'
+require 'soap/wsdlDriver'
+require 'uri'
+require 'enumerator'
+require 'builder'
+require 'json'
+require 'global_constants.rb'
+#require 'wss4r/rpc/wssdriver'
+
+
+
+class MyController2Controller < ApplicationController
+  @allrecords ={}
+
+
+  def actionA
+
+    client = Savon.client(wsdl: "http://www.dneonline.com/calculator.asmx?wsdl")
+    message = {
+      "intA" => 20,
+      "intB" => 5
+    }
+    #response = client.call(:divide,  message: message )
+    #hash = response.body
+    #el1=hash[:divide_response]
+    #@result=el1[:divide_result]
+
+     doMapExtract
+
+
+
+  end
+
+
+  def actionB
+    #client = Savon.client(wsdl: "http://10.0.2.2:8080/WS/eConnectWS1?wsdl")
+    #names = Array.new(4, "mac")
+    #message = {
+    #  "name" => names,
+    #}
+    #response = client.call(:method1,  message: message )
+    #hash = response.body
+    #@result=hash
+  end
+
+  def actionC
+  end
+
+
+
+def doMapExtract
+@grid=[]
+detail = {}
+header = {}
+    File.open('/home/egaloustian/MongoApp1/concur.csv').each do |txtline|
+	lx=0    
+  	chunks = txtline.gsub("\n", '|').split('|')
+      	while (chunks.any?)
+		lines = []
+        	lines << chunks.slice!(0, 255)
+
+		if(lx>=3)
+ 		detail[:voucher] = "2231112"
+ 		else      	
+		detail[:voucher] = lines[lx][GC::PO_NUMBER]
+		end
+
+        	detail[:account] = lines[lx][GC::COMPANY_ALLOCATION]
+        	moneyamt = lines[lx][GC::JOURNAL_AMOUNT].to_f
+        	
+		if(moneyamt>=0.0)
+          		debitamt = moneyamt.abs
+          		creditamt = 0
+          		dist="PURCH"
+        	else
+          		creditamt =  moneyamt.abs
+          		debitamt = 0
+          		dist="REFUND"
+       		end
+        
+		detail[:disttype]=dist
+        	detail[:debitamt]=debitamt
+        	detail[:creditamt]=creditamt
+
+        	@grid.push(detail)
+		lx += 1
+      	end
+    end
+end
+
+def edit_item(obj)
+  #thisitem=@grid.to_a.find(index)
+  #render :json=>@grid
+  render :json=>obj
+  #respond_to do |format|
+  #    format.json(render :json=>@grid)
+  #  end
+end
+
+end

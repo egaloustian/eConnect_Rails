@@ -1,0 +1,57 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  PONum: MyString
+  Description: MyString
+  DocNum: MyString
+  DocDate: 
+  PurchaseAmt: 
+  Delivery: MyString
+  Carrier: MyString
+  BSSI_facility: MyString
+  CompanyReqOrg: 
+  JournalAcctCode: MyString
+  JournaAmt: 
+  DocType: MyString
+  CompanyAlloc: MyString
+  DivAlloc: MyString
+  DeptAlloc: MyString
+  RemittoID: MyString
+  Vendor: MyString
+  BatchID: MyString
+  ShaKey: MyString
+  Voucher: MyString
+  BSSI_Intercompany: MyString
+  BSSI_Max: MyString
+  Account: MyString
+  AggAccount: MyString
+  AggSum: 
+  SourceFile: MyString
+
+two:
+  PONum: MyString
+  Description: MyString
+  DocNum: MyString
+  DocDate: 
+  PurchaseAmt: 
+  Delivery: MyString
+  Carrier: MyString
+  BSSI_facility: MyString
+  CompanyReqOrg: 
+  JournalAcctCode: MyString
+  JournaAmt: 
+  DocType: MyString
+  CompanyAlloc: MyString
+  DivAlloc: MyString
+  DeptAlloc: MyString
+  RemittoID: MyString
+  Vendor: MyString
+  BatchID: MyString
+  ShaKey: MyString
+  Voucher: MyString
+  BSSI_Intercompany: MyString
+  BSSI_Max: MyString
+  Account: MyString
+  AggAccount: MyString
+  AggSum: 
+  SourceFile: MyString

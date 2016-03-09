@@ -1,0 +1,4 @@
+class MyController1Controller < ApplicationController
+  def new
+  end
+end

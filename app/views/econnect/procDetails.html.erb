@@ -1,0 +1,36 @@
+<h4>eConnect - Details View</h4>
+
+<table class="table table-striped table-bordered table-hover">
+  <tr>
+      <!--   <th>BatchID</th>  -->
+  	    <th>Voucher#</th>
+        <th>Account</th>
+        <th>Dist Type</th>
+        <th>Debit Amount</th>
+        <th>Credit Amount</th>
+      <!--  <th>Created Date/Time</th>  -->
+        <th>Status</th>
+        <th>Action</th>
+  </tr>
+
+<% if (@grid != nil) %>
+<% @grid.each do |hash| %>
+  <tr>
+    <td> <%= hash[:voucher]   %> </td>
+    <td> <%= hash[:account]   %> </td>
+    <td> <%= hash[:disttype]  %> </td>
+    <td> <%= hash[:debitamt]  %> </td>
+    <td> <%= hash[:creditamt] %> </td>
+  <!--   <td> <%= hash[:creatdttm] %> </td>-->
+    <td> <%= 'Success' %></td>
+    <!--(:id => aitem[50]) -->
+    <td> <%= link_to "Submit",econnect_procItem_path(id: hash) %></td>
+  </tr>
+<% end %>
+<% end %>
+</table>
+
+<br>
+<%= link_to "Get From File ",econnect_loadInputFromFile_path(id: hash) %>
+<%= link_to "Save",econnect_commitToDB_path(id: hash) %>
+<button type="button" class="btn btn-primary" href="/econnect/commitToDB">Submit to GP</button>

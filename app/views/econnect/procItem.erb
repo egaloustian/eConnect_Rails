@@ -1,0 +1,26 @@
+<h4>eConnect - processing...</h4>
+
+<table class="table table-striped table-bordered table-hover">
+  <tr>
+      <!--   <th>BatchID</th>  -->
+  	    <th>Voucher#</th>
+        <th>Account</th>
+        <th>BatchID</th>
+        <th>Debit Amount</th>
+        <th>Credit Amount</th>
+        <th>Dist Type</th>
+  </tr>
+
+  <tr>
+      <% var=eval(@thisitem)  %>
+    <td> <%=var['voucher']   %> </td>
+    <td> <%=var['account']   %> </td>
+    <td> <%=var['batchid']   %> </td>
+    <td> <%=var['debitamt']   %> </td>
+    <td> <%=var['creditamt']   %> </td>
+    <td> <%=var['disttype']   %> </td>
+  </tr>
+
+</table>
+
+<br>

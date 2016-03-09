@@ -1,0 +1,21 @@
+module GC
+
+	DESCRIPTION = 4.freeze
+	DOC_NUMBER = 5.freeze
+	DOC_DATE = 6.freeze	
+	PURCHASE_AMOUNT = 8.freeze
+	BSSI_FACILITY = 37.freeze
+	VENDOR = 164.freeze
+	DOC_TYPE = 63.freeze
+	COMPANY_REQUEST_ORG = 37.freeze
+	JOURNAL_ACCOUNT_CODE = 60.freeze
+	JOURNAL_AMOUNT = 61.freeze
+	COMPANY_ALLOCATION = 68.freeze
+	DIVISION_ALLOCATION = 69.freeze
+	DEPARTMENT_ALLOCATION = 70.freeze
+	PO_NUMBER = 1.freeze
+	REMIT_TO_ID = 165.freeze
+	DELIVERY = 15.freeze
+	CARRIER_HANDLER = 16.freeze
+end
+

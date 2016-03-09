@@ -1,0 +1,2 @@
+module EconnectHelper
+end
