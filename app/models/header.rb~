@@ -1,22 +1,22 @@
 class Header
   include Mongoid::Document
   field :batchid, type: String
-  field :voucher, type: integer
-  field :description, type: String
-  field :vendor, type: String
-  field :remittoid, type: String
-  field :docnumber, type: String
-  field :ponumber, type: String
-  field :purchaseamount, type: Float
-  field :bssi_facility, type: String
-  field :bssi_department, type: String
-  field :bssi_accountsub, type: String
-  field :bssi_intercompany, type: String
-  field :carrier_handler, type: String
-  field :postingdate, type: Time
-  field :docdate, type: Time
-  field :doctype, type: String
-  field :payablesbatch, type: String
-  field :sourceFile, type: String
+  field :VoucherNo, type: Integer
+  field :Payables, type: String
+  field :DocType, type: String
+  field :Description, type: String
+  field :Vendor, type: String
+  field :RemitToID, type: String
+  field :DocDate, type: Time
+  field :DocNumber, type: String
+  field :PurchaseAmount, type: Float
+  field :PostingDate, type: Time
+  field :PO, type: String
+  field :BSSI_Facility, type: String
+  field :BSSI_Department, type: String
+  field :BSSI_Accountsub, type: String
+  field :BSSI_Intercompany, type: String
+  field :Carrier, type: String
+  field :FileName, type: String
   end
 

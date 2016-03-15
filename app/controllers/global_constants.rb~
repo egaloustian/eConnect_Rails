@@ -45,5 +45,5 @@ module OUT
 	AGG_ACCOUNT=23
 	AGG_SUM=24
 	SOURCE_FILE=25
-	Tag=26
+	TAG=26
 end

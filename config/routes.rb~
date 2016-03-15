@@ -2,18 +2,20 @@ Rails.application.routes.draw do
  
   resources :econnects
   resources :econnects
-#root 'users#new'
-  root 'econnect#procDetails'
-#  root 'econnect#procHeader'
- 
+   root 'econnect#filequeue' 
   get '/econnect/procItem/'  =>'econnect#procItem'
   get 'my_controller1/new'
-  get '/econnect/actionC/'  =>'econnect#actionC'
   get '/econnect/procDetails/'  =>'econnect#procDetails'
   get '/econnect/procHeader/'  =>'econnect#procHeader'
+  get '/econnect/procDetailsHist/'  =>'econnect#procDetailsHist'
+  get '/econnect/procHeaderHist/'  =>'econnect#procHeaderHist'
   get '/econnect/procItem/:id'  =>'econnect#procItem'
-  get '/econnect/commitToDB/'  =>'econnect#commitToDB'  
+  get '/econnect/commitToDB/'  =>'econnect#commitToDB'
+  get '/econnect/loadInputFromFile/' =>'econnect#loadInputFromFile'
   get '/econnect/procHeader/'  =>'econnect#procHeader'
+  get '/econnect/filequeue/'  =>'econnect#filequeue'
+
+
 #  get 'http://localhost:3000/econnect/processitem/:id', to: 'econnect#processitem'
 
  resources :econnect

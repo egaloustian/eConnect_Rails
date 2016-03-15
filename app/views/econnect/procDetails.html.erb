@@ -9,8 +9,6 @@
         <th>Debit Amount</th>
         <th>Credit Amount</th>
       <!--  <th>Created Date/Time</th>  -->
-        <th>Status</th>
-        <th>Action</th>
   </tr>
 
 <% if (@grid != nil) %>
@@ -22,15 +20,14 @@
     <td> <%= hash[:debitamt]  %> </td>
     <td> <%= hash[:creditamt] %> </td>
   <!--   <td> <%= hash[:creatdttm] %> </td>-->
-    <td> <%= 'Success' %></td>
+  <!--  <td> <%= 'Success' %></td>-->
     <!--(:id => aitem[50]) -->
-    <td> <%= link_to "Submit",econnect_procItem_path(id: hash) %></td>
+  <!--  <td> <%= link_to "Submit",econnect_procItem_path(id: hash) %></td>-->
   </tr>
 <% end %>
 <% end %>
 </table>
 
 <br>
-<%= link_to "Get From File ",econnect_loadInputFromFile_path(id: hash) %>
-<%= link_to "Save",econnect_commitToDB_path(id: hash) %>
-<button type="button" class="btn btn-primary" href="/econnect/commitToDB">Submit to GP</button>
+<a type="button" class="btn btn-primary" href="/econnect/commitToDB"> Save to DB </a>
+<a type="button" class="btn btn-primary" href="/econnect/commitToDB"> Send to GP </a>

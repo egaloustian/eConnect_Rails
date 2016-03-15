@@ -4,25 +4,28 @@ require 'open-uri'
 require 'soap/wsdlDriver'
 require 'uri'
 require 'json'
-require 'global_constants.rb'
+require 'mapdef.rb'
 require 'securerandom'
 require 'csv'
 require 'active_record'
-#require 'wss4r/rpc/wssdriver'
+require 'configure.rb'
 
-
-class PersistDB < ActiveRecord::Base
-  def connect
-  end
-
-  def disconnect
-  end
-end
 
 class EconnectController < ApplicationController
-  @@headerCache = []
-  @@detailsCache =[]
-  @@allRecords = []
+  @@headerCache  = []
+  @@detailsCache = []
+  @@allRecords  = []
+  @@headerBuff  = []
+  @@filename = ""
+
+  def filequeue
+    @filelist = []
+    path  = Config::INPUT_FILE_PATH + "*.csv"
+
+    Dir.glob(path) do |filename|
+      @filelist << filename
+    end
+  end
 
 
   def procDetails
@@ -35,26 +38,70 @@ class EconnectController < ApplicationController
     hash = response.body
     el1=hash[:divide_response]
     @result=el1[:divide_result]
-    doMapDetails
+
+    generateDetails
   end
 
 
   def procHeader
-    doMapHeader
+    generateHeader
   end
 
-  def actionC
-  end
-
-
-def doMapDetails
+  def procHeaderHist
     @grid = []
-    @@allRecords.sort {|a,b| a[OUT::VOUCHER] <=> b[OUT::VOUCHER]}
+    headerHist = Header.all
+    headerHist.each do |hdr|
+      rec = {}
+      rec[:batchid] =  hdr.BatchID
+      rec[:voucher] =  hdr.VoucherNo
+      rec[:payablesbatch] =  hdr.Payables
+      rec[:doctype] =  hdr.DocType
+      rec[:description] = hdr.Description
+      rec[:vendor] = hdr.Vendor
+      rec[:remittoid] = hdr.RemitToID
+      rec[:docdate] = hdr.DocDate
+      rec[:docnumber] = hdr.DocNumber
+      rec[:purchaseamount] = hdr.PurchaseAmount
+      rec[:postingdate] = hdr.PostingDate
+      rec[:ponumber] = hdr.PO
+      rec[:bssi_facility] = hdr.BSSI_Facility
+      rec[:bssi_department] = hdr.BSSI_Department
+      rec[:bssi_accountsub] = hdr.BSSI_Accountsub
+      rec[:bssi_intercompany] = hdr.BSSI_Intercompany
+      rec[:carrier_handler] = hdr.Carrier
+      rec[:sourceFile] = hdr.FileName
+      @grid << rec
+    end
+  end
+
+  def procDetailsHist
+    @grid = []
+    detailHist = Detail.all
+    detailHist.each do |dtl|
+      rec = {}
+      rec[:batchid] = dtl.BatchID
+      rec[:voucher] = dtl.VoucherNo
+      rec[:disttype] = dtl.DistType
+      rec[:debitamt] = dtl.DebitAmt
+      rec[:creditamt] = dtl.CreditAmt
+      rec[:account] = dtl.Account
+      rec[:aggaccount] = dtl.AccountAgg
+      rec[:vendor] = dtl.Vendor
+      rec[:sourceFile] = dtl.FileName
+
+      @grid << rec
+    end
+  end
+
+
+def generateDetails
+    @grid = []
+    @@allRecords.sort {|a,b| a[O::VOUCHER] <=> b[O::VOUCHER]}
     @@allRecords.each do |r|
              detail = {}
-             detail[:batchid] = r[OUT::BATCHID]
-             detail[:voucher] = r[OUT::VOUCHER]
-  	         moneyamt = r[OUT::JOURNAL_AMOUNT].to_f
+             detail[:batchid] = r[O::BATCHID]
+             detail[:voucher] = r[O::VOUCHER]
+  	         moneyamt = r[O::JOURNAL_AMOUNT].to_f
 
 		        if(moneyamt>=0.0)
 		            debitamt = moneyamt.abs
@@ -73,54 +120,59 @@ def doMapDetails
             cur_date = time.strftime("%Y-%m-%d %H:%M:%S")
             cur_date = time.strftime("MM/dd/yyyy")
             detail[:creatdttm]=cur_date
-            detail[:account] = r[OUT::AGG_ACCOUNT]
+            detail[:account] = r[O::ACCOUNT]
+            detail[:aggaccount] = r[O::AGG_ACCOUNT]
+            detail[:vendor] = r[O::VENDOR]
 
             @grid << detail
+            @@detailsCache << detail
           end
-          @@detailsCache = @grid.dup
 end
 
 
 
 
-def doMapHeader
-            @grid = []
-      	   @@headerBuff.each do |r|
+def generateHeader
+             @grid = []
+      	     @@headerBuff.each do |r|
              header = {}
-             header[:batchid] = r[OUT::BATCHID]
-             header[:voucher] = r[OUT::VOUCHER] #lines[0][IN::PO_NUMBER]
-             header[:description] = r[OUT::DESCRIPTION].to_s
-             header[:vendor] = r[OUT::VENDOR]
-             header[:remittoid] = r[OUT::REMIT_TO_ID]
-             header[:docnumber] = r[OUT::DOC_NUMBER]
-             header[:ponumber]=r[OUT::PO_NUMBER]
-             header[:purchaseamount] = r[OUT::PURCHASE_AMOUNT]
-             header[:bssi_facility] = r[OUT::BSSI_FACILITY]
+             header[:batchid] = r[O::BATCHID]
+             header[:voucher] = r[O::VOUCHER] #lines[0][I::PO_NUMBER]
+             header[:description] = r[O::DESCRIPTION].to_s
+             header[:vendor] = r[O::VENDOR]
+             header[:remittoid] = r[O::REMIT_TO_ID]
+             header[:docnumber] = r[O::DOC_NUMBER]
+             header[:ponumber]=r[O::PO_NUMBER]
+             header[:purchaseamount] = r[O::PURCHASE_AMOUNT]
+             header[:bssi_facility] = r[O::BSSI_FACILITY]
              header[:bssi_department] = 0
              header[:bssi_accountsub] = 0
-             header[:bssi_intercompany] = r[OUT::BSSI_INTERCOMPANY]
-             header[:carrier_handler] = r[OUT::CARRIER_HANDLER]
+             header[:bssi_intercompany] = r[O::BSSI_INTERCOMPANY]
+             header[:carrier_handler] = r[O::CARRIER_HANDLER]
+             header[:sourcefile] = r[O::SOURCE_FILE]
             time = Time.new
-            cur_date = time.strftime("%m/%d/%Y")
+#ssis            cur_date = time.strftime("%m/%d/%Y")
+            cur_date = time.strftime("%Y-%m-%d")
             header[:postingdate] = cur_date
 
-            if(r[OUT::DOC_DATE] !=nil)
-              doctime = Time.parse(r[OUT::DOC_DATE].to_str)
-              doctime = doctime.strftime("%m/%d/%Y")
+            if(r[O::DOC_DATE] !=nil)
+              doctime = Time.parse(r[O::DOC_DATE].to_str)
+#SSIS              doctime = doctime.strftime("%m/%d/%Y")
+              doctime = doctime.strftime("%Y-%m-%d")
             end
             header[:docdate] =doctime
 
-            doctype = r[OUT::DOC_TYPE]=="DR"?doctype="Invoice" : "Credit-Memo"
+            doctype = r[O::DOC_TYPE]=="DR"?doctype="Invoice" : "Credit-Memo"
             header[:doctype] = doctype
 
-            cur_date = time.strftime("%Y%m%d")
-            scode = r[OUT::BSSI_MAX] == 1?'IC':'NC'
-            payablebatch = r[OUT::BSSI_FACILITY].to_s + scode + cur_date
+            cur_date = time.strftime("%y%m%d%p")
+            scode = r[O::BSSI_MAX] == 1?'IC':'NC'
+            payablebatch = r[O::BSSI_FACILITY].to_s + scode + cur_date
             header[:payablesbatch] = payablebatch
 
             @grid << header
+            @@headerCache << header
       	end
-        @@headerCache = @grid.dup
 end
 
 def procItem
@@ -140,157 +192,185 @@ end
 
 def loadInputFromFile
   @@allRecords.clear
-  batchid=SecureRandom.uuid
-  CSV.foreach("/home/egaloustian/MongoApp1/input/concur5.csv", {:col_sep =>"|"} ) do |row|
+  @@headerCache.clear
+  @@detailsCache.clear
+  @@headerBuff.clear
+  @@filename = params[:id]
+  #batchid=SecureRandom.uuid
+  time = Time.new
+  date = time.strftime("%Y%m%d")
+  id = (Time.parse(time.to_s).seconds_since_midnight/60).to_i
+  batchid = "B-" + date + "-" + id.to_s
+
+  #"/home/egaloustian/MongoApp1/input/concur5.csv"
+  vouchernum=1001
+  vouchernum = Header.max(:VoucherNo)+1
+  #h.find("VoucherNo" => vouchernum).sort({"VoucherNo" => -1}).limit(1).first()
+
+    CSV.foreach(@@filename, {:col_sep =>"|"} ) do |row|
     rec=[]
     if(row[0] != nil && row[0]=='DETAIL')
-      rec[OUT::PO_NUMBER]=row[IN::PO_NUMBER]
-      rec[OUT::DESCRIPTION]=row[IN::DESCRIPTION]
-      rec[OUT::DOC_NUMBER]=row[IN::DOC_NUMBER]
-      rec[OUT::DOC_DATE]=row[IN::DOC_DATE]
-      rec[OUT::PURCHASE_AMOUNT]=row[IN::PURCHASE_AMOUNT]
-      rec[OUT::DELIVERY]=row[IN::DELIVERY]
-      rec[OUT::CARRIER_HANDLER]=row[IN::CARRIER_HANDLER]
-      rec[OUT::BSSI_FACILITY]=row[IN::BSSI_FACILITY]
-      rec[OUT::COMPANY_REQUEST_ORG]=row[IN::COMPANY_REQUEST_ORG]
-      rec[OUT::JOURNAL_ACCOUNT_CODE]=row[IN::JOURNAL_ACCOUNT_CODE]
-      rec[OUT::JOURNAL_AMOUNT]=row[IN::JOURNAL_AMOUNT]
-      rec[OUT::DOC_TYPE]=row[IN::DOC_TYPE]
-      rec[OUT::COMPANY_ALLOCATION]=row[IN::COMPANY_ALLOCATION]
-      rec[OUT::DIVISION_ALLOCATION]=row[IN::DIVISION_ALLOCATION]
-      rec[OUT::DEPARTMENT_ALLOCATION]=row[IN::DEPARTMENT_ALLOCATION]
-      rec[OUT::REMIT_TO_ID]=row[IN::REMIT_TO_ID]
-      rec[OUT::VENDOR]=row[IN::VENDOR]
-      rec[OUT::BATCHID]= batchid
-      rec[OUT::SHA1KEY]= getSHA1Key(row)
-      rec[OUT::TAG]=true
-      rec[OUT::BSSI_INTERCOMPANY]=rec[OUT::COMPANY_ALLOCATION]==rec[OUT::COMPANY_REQUEST_ORG]?0:1
+      rec[O::PO_NUMBER]=row[I::PO_NUMBER]
+      rec[O::DESCRIPTION]=row[I::DESCRIPTION]
+      rec[O::DOC_NUMBER]=row[I::DOC_NUMBER]
+      rec[O::DOC_DATE]=row[I::DOC_DATE]
+      rec[O::PURCHASE_AMOUNT]=row[I::PURCHASE_AMOUNT]
+      rec[O::DELIVERY]=row[I::DELIVERY]
+      rec[O::CARRIER_HANDLER]=row[I::CARRIER_HANDLER]
+      rec[O::BSSI_FACILITY]=row[I::BSSI_FACILITY]
+      rec[O::COMPANY_REQUEST_ORG]=row[I::COMPANY_REQUEST_ORG]
+      rec[O::JOURNAL_ACCOUNT_CODE]=row[I::JOURNAL_ACCOUNT_CODE]
+      rec[O::JOURNAL_AMOUNT]=row[I::JOURNAL_AMOUNT]
+      rec[O::DOC_TYPE]=row[I::DOC_TYPE]
+      rec[O::COMPANY_ALLOCATION]=row[I::COMPANY_ALLOCATION]
+      rec[O::DIVISION_ALLOCATION]=row[I::DIVISION_ALLOCATION]
+      rec[O::DEPARTMENT_ALLOCATION]=row[I::DEPARTMENT_ALLOCATION]
+      rec[O::REMIT_TO_ID]=row[I::REMIT_TO_ID]
+      rec[O::VENDOR]=row[I::VENDOR]
+      rec[O::BATCHID]= batchid
+      rec[O::SHA1KEY]= getSHA1Key(row)
+      rec[O::TAG]=true
+      rec[O::SOURCE_FILE] = @@filename
+      rec[O::BSSI_INTERCOMPANY]=rec[O::COMPANY_ALLOCATION]==rec[O::COMPANY_REQUEST_ORG]?0:1
 
-      acctnum= rec[OUT::COMPANY_ALLOCATION].to_s + "-" + rec[OUT::DIVISION_ALLOCATION].to_s +
-           "-" + rec[OUT::DEPARTMENT_ALLOCATION].to_s  + "-" + rec[OUT::JOURNAL_ACCOUNT_CODE].to_s
-      rec[OUT::AGG_ACCOUNT] = acctnum
-      rec[OUT::ACCOUNT] = acctnum
+      acctnum= rec[O::COMPANY_ALLOCATION].to_s + "-" + rec[O::DIVISION_ALLOCATION].to_s +
+           "-" + rec[O::DEPARTMENT_ALLOCATION].to_s  + "-" + rec[O::JOURNAL_ACCOUNT_CODE].to_s
+#ssis      rec[O::AGG_ACCOUNT] = rec[O::BSSI_FACILITY] + "-000-0000-2500-25000"
+      rec[O::AGG_ACCOUNT] = rec[O::COMPANY_REQUEST_ORG] + "-000-0000-2500-25000"
+
+      rec[O::ACCOUNT] = acctnum
       @@allRecords << rec
     end
   end
 
-    vouchernum = 1001
     bssi_intercompany_max=
-    @@headerBuff = @@allRecords.uniq{|x|[x[OUT::SHA1KEY]]}
+    @@headerBuff = @@allRecords.uniq{|x|[x[O::SHA1KEY]]}
     @@headerBuff.each do |r|
-        r[OUT::VOUCHER] = vouchernum
+        r[O::VOUCHER] = vouchernum
 
         @@allRecords.each do |a|
-            if(r[OUT::SHA1KEY] == a[OUT::SHA1KEY])
-              a[OUT::BSSI_MAX]= a[OUT::BSSI_INTERCOMPANY] | r[OUT::BSSI_INTERCOMPANY]
-              a[OUT::VOUCHER] = vouchernum
+            if(r[O::SHA1KEY] == a[O::SHA1KEY])
+              a[O::BSSI_MAX]= a[O::BSSI_INTERCOMPANY] | r[O::BSSI_INTERCOMPANY]
+              a[O::VOUCHER] = vouchernum
             end
         end
         vouchernum+=1
     end
     @@inputBuffer = @@allRecords
     #now add the balance
-    @@headerBuff = @@allRecords.uniq{|x|[x[OUT::VOUCHER]]}
+    @@headerBuff = @@allRecords.uniq{|x|[x[O::VOUCHER]]}
     @@headerBuff.each do |r|
       rec = []
       sumbalance=0.0
       @@allRecords.each do |a|
-          if(r[OUT::SHA1KEY] == a[OUT::SHA1KEY])
-            rec[OUT::VOUCHER] = a[OUT::VOUCHER]
-            rec[OUT::BATCHID] = a[OUT::BATCHID]
-            sumbalance += a[OUT::JOURNAL_AMOUNT].to_f
+          if(r[O::SHA1KEY] == a[O::SHA1KEY])
+            rec[O::VOUCHER] = a[O::VOUCHER]
+            rec[O::BATCHID] = a[O::BATCHID]
+            sumbalance += a[O::JOURNAL_AMOUNT].to_f
           end
         end
-        if(rec[OUT::VOUCHER]!=nil)
-          acctnum = r[OUT::COMPANY_REQUEST_ORG] + '-000-0000-2500-25000'
-          rec[OUT::AGG_ACCOUNT] = acctnum
-          rec[OUT::JOURNAL_AMOUNT] = -1 * sumbalance
+        if(rec[O::VOUCHER]!=nil)
+          #SSIS - acctnum = r[O::COMPANY_REQUEST_ORG] + '-000-0000-2500-25000'
+          #SSIS - rec[O::AGG_ACCOUNT] = acctnum
+          rec[O::JOURNAL_AMOUNT] = -1 * sumbalance
           @@allRecords << rec
         end
 
     end
-    #TEMPORARY !!!
-    #doMapHeader
-    #doMapDetails
-    #commitToDB
-    #TEMPORARY !!!
+    generateDetails
+    generateHeader
+    render "procHeader"
 
 end
 
 def commitToDB
   commitInputToDB
   commitHeaderToDB
+  commitDetailsToDB
 end
 
 def commitInputToDB
   @@inputBuffer.each do |rec|
-    if( rec[OUT::TAG] == true)
+    if( rec[O::TAG] == true)
       inp = Input.new
-      inp.PONum  = rec[OUT::PO_NUMBER]
-      inp.Description = rec[OUT::DESCRIPTION]
-      inp.DocNum  = rec[OUT::DOC_NUMBER]
-      inp.DocDate  = rec[OUT::DOC_DATE]
-      inp.PurchaseAmt  = rec[OUT::PURCHASE_AMOUNT ]
-      inp.Delivery  = rec[OUT::DELIVERY]
-      inp.Carrier  = rec[OUT::CARRIER_HANDLER ]
-      inp.BSSI_facility  = rec[OUT::BSSI_FACILITY ]
-      inp.CompanyReqOrg  = rec[OUT::COMPANY_REQUEST_ORG]
-      inp.JournalAcctCode  = rec[OUT::JOURNAL_ACCOUNT_CODE ]
-      inp.JournaAmt  = rec[OUT::JOURNAL_AMOUNT]
-      inp.DocType  = rec[OUT::DOC_TYPE ]
-      inp.CompanyAlloc  = rec[OUT::COMPANY_ALLOCATION ]
-      inp.DivAlloc  = rec[OUT::DIVISION_ALLOCATION ]
-      inp.DeptAlloc  = rec[OUT::DEPARTMENT_ALLOCATION ]
-      inp.RemittoID  = rec[OUT::REMIT_TO_ID ]
-      inp.Vendor  = rec[OUT::VENDOR]
-      inp.BatchID  = rec[OUT::BATCHID]
-      inp.ShaKey  = rec[OUT::SHA1KEY]
-      inp.Voucher  = rec[OUT::VOUCHER]
-      inp.BSSI_Intercompany  = rec[OUT::BSSI_INTERCOMPANY]
-      inp.BSSI_Max  = rec[OUT::BSSI_MAX]
-      inp.Account  = rec[OUT::ACCOUNT]
-      inp.AggAccount  = rec[OUT::AGG_ACCOUNT ]
-      inp.AggSum  = rec[OUT::AGG_SUM ]
-      inp.SourceFile  = rec[OUT::SOURCE_FILE ]
+      inp.PONum  = rec[O::PO_NUMBER]
+      inp.Description = rec[O::DESCRIPTION]
+      inp.DocNum  = rec[O::DOC_NUMBER]
+      inp.DocDate  = rec[O::DOC_DATE]
+      inp.PurchaseAmt  = rec[O::PURCHASE_AMOUNT ]
+      inp.Delivery  = rec[O::DELIVERY]
+      inp.Carrier  = rec[O::CARRIER_HANDLER ]
+      inp.BSSI_facility  = rec[O::BSSI_FACILITY ]
+      inp.CompanyReqOrg  = rec[O::COMPANY_REQUEST_ORG]
+      inp.JournalAcctCode  = rec[O::JOURNAL_ACCOUNT_CODE ]
+      inp.JournaAmt  = rec[O::JOURNAL_AMOUNT]
+      inp.DocType  = rec[O::DOC_TYPE ]
+      inp.CompanyAlloc  = rec[O::COMPANY_ALLOCATION ]
+      inp.DivAlloc  = rec[O::DIVISION_ALLOCATION ]
+      inp.DeptAlloc  = rec[O::DEPARTMENT_ALLOCATION ]
+      inp.RemittoID  = rec[O::REMIT_TO_ID ]
+      inp.Vendor  = rec[O::VENDOR]
+      inp.BatchID  = rec[O::BATCHID]
+      inp.ShaKey  = rec[O::SHA1KEY]
+      inp.Voucher  = rec[O::VOUCHER]
+      inp.BSSI_Intercompany  = rec[O::BSSI_INTERCOMPANY]
+      inp.BSSI_Max  = rec[O::BSSI_MAX]
+      inp.Account  = rec[O::ACCOUNT]
+      inp.AggAccount  = rec[O::AGG_ACCOUNT ]
+      inp.AggSum  = rec[O::AGG_SUM ]
+      inp.SourceFile  = rec[O::SOURCE_FILE ]
       inp.save
     end
   end
 end
 
 def commitHeaderToDB
-  @@inputBuffer.each do |rec|
+  @@headerCache.each do |rec|
     hdr = Header.new
-    hdr.batchid = rec["batchid"]
-    hdr.voucher = rec["voucher"]
-    hdr.description = rec["description"]
-    hdr.vendor = rec["vendor"]
-    hdr.remittoid = rec["remittoid"]
-    hdr.docnumber = rec["docnumber"]
-    hdr.ponumber = rec["ponumber"]
-    hdr.purchaseamount = rec["purchaseamount"]
-    hdr.bssi_facility = rec["bssi_facility"]
-    hdr.bssi_department = rec["bssi_department"]
-    hdr.bssi_accountsub = rec["bssi_accountsub"]
-    hdr.bssi_intercompany = rec["bssi_intercompany"]
-    hdr.carrier = rec["carrier"]
-    hdr.postingdate = rec["postingdate"]
-    hdr.docdate = rec["docdate"]
-    hdr.doctype = rec["doctype"]
-    hdr.payablesbatch = rec["payablesbatch"]
-    hdr.sourceFile = rec["sourceFile"]
+    hdr.BatchID = rec[:batchid]
+    hdr.VoucherNo = rec[:voucher]
+    hdr.Payables = rec[:payablesbatch]
+    hdr.DocType = rec[:doctype]
+    hdr.Description = rec[:description]
+    hdr.Vendor = rec[:vendor]
+    hdr.RemitToID = rec[:remittoid]
+    hdr.DocDate = rec[:docdate]
+    hdr.DocNumber = rec[:docnumber]
+    hdr.PurchaseAmount = rec[:purchaseamount]
+    hdr.PostingDate = rec[:postingdate]
+    hdr.PO = rec[:ponumber]
+    hdr.BSSI_Facility = rec[:bssi_facility]
+    hdr.BSSI_Department = rec[:bssi_department]
+    hdr.BSSI_Accountsub = rec[:bssi_accountsub]
+    hdr.BSSI_Intercompany = rec[:bssi_intercompany]
+    hdr.Carrier = rec[:carrier_handler]
+    hdr.FileName = rec[:sourceFile]
     hdr.save
   end
 end
 
 def commitDetailsToDB
+  @@detailsCache.each do |rec|
+    dtl = Detail.new
+    dtl.BatchID = rec[:batchid]
+    dtl.VoucherNo = rec[:voucher]
+    dtl.Account = rec[:account]
+    dtl.DistType = rec[:disttype]
+    dtl.DebitAmt = rec[:debitamt]
+    dtl.CreditAmt = rec[:creditamt]
+    dtl.AccountAgg = rec[:aggaccount]
+    dtl.Vendor = rec[:vendor]
+    dtl.FileName = rec[:sourceFile]
+    dtl.save
+  end
 end
 
 
 def getSHA1Key  (r)
-  stringKey = r[IN::DOC_TYPE].to_s + r[IN::DESCRIPTION].to_s +
-  r[IN::VENDOR].to_s + r[IN::REMIT_TO_ID].to_s + r[IN::DOC_DATE].to_s+
-  r[IN::DOC_NUMBER].to_s  + r[IN::PO_NUMBER].to_s+
-  r[IN::BSSI_FACILITY].to_s
+  stringKey = r[I::DOC_TYPE].to_s + r[I::DESCRIPTION].to_s +
+  r[I::VENDOR].to_s + r[I::REMIT_TO_ID].to_s + r[I::DOC_DATE].to_s+
+  r[I::DOC_NUMBER].to_s  + r[I::PO_NUMBER].to_s+
+  r[I::BSSI_FACILITY].to_s
   sh1key = Digest::SHA1.hexdigest stringKey
   return sh1key
 end

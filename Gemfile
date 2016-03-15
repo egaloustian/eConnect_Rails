@@ -24,6 +24,7 @@ gem 'turbolinks'
 gem 'sdoc', '~> 0.4.0', group: :doc
 gem 'mongoid', '~> 5.0.0.beta', github: 'mongoid/mongoid'
 gem 'bson_ext'
+gem 'green_shoes'
 #gem 'mysql2', '~> 0.3.18'
 # Use ActiveModel has_secure_password
 # gem 'bcrypt', '~> 3.1.7'

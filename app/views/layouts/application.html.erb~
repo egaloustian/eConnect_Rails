@@ -83,8 +83,8 @@
        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
          <ul class="nav navbar-nav navbar-right">
            <li><a href="#">Summary <span class="sr-only">(current)</span></a></li>
-           <li><a href="/econnect/procHeader/">Header</a></li>
-           <li><a href="/econnect/procDetails/">Detail </a></li>
+           <li><a href="/econnect/generateHeader/">Header</a></li>
+           <li><a href="/econnect/generateDetails/">Detail </a></li>
            <li><a href="/econnect/processitem/">Test </a></li>
          </ul>
        </div><!-- /.navbar-collapse -->

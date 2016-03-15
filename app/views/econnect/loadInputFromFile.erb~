@@ -4,7 +4,7 @@
   <tr>
   	    <th>Loading...</th>
   <script type="text/javascript">
-    window.location.href="/"  // put your correct path in a string here
+    window.location.href="/"  
   </script>
 
   <tr>

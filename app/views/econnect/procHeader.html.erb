@@ -19,6 +19,7 @@
         <th>BSSI_AccountSubstitution</th>
         <th>BSSI_Intercompany</th>
         <th>Carrier/Handler</th>
+        <th>FileName</th>
   </tr>
 
 <% @grid.each do |hash| %>
@@ -40,9 +41,10 @@
     <td> <%= hash[:bssi_accountsub] %> </td>
     <td> <%= hash[:bssi_intercompany] %> </td>
     <td> <%= hash[:carrier_handler] %> </td>
+    <td> <%= hash[:sourcefile] %> </td>
 
-    <td> <%= 'Success' %></td>
-    <td> <%= link_to "Edit", "some path" %></td>
+    <!--<td> <%= 'Success' %></td>-->
+    <!--<td> <%= link_to "Edit", "some path" %></td>-->
    <!--(:id => aitem[50]) -->
   </tr>
 
